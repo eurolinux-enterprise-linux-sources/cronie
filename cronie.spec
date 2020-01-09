@@ -6,7 +6,7 @@
 Summary: Cron daemon for executing programs at set times
 Name: cronie
 Version: 1.4.4
-Release: 15%{?dist}
+Release: 15%{?dist}.1
 License: MIT and BSD and ISC and GPLv2
 Group: System Environment/Base
 URL: https://fedorahosted.org/cronie
@@ -32,6 +32,7 @@ Patch17:  cronie-1.4.4-null-deref.patch
 Patch18:  cronie-1.4.4-sigterm-child.patch
 Patch19:  cronie-1.4.4-shutdown-msg.patch
 Patch20:  cronie-1.4.4-getpwnam-error.patch
+Patch21:  cronie-1.4.4-temp-name.patch
 
 Requires: syslog, bash >= 2.0
 Requires: /usr/sbin/sendmail
@@ -111,6 +112,7 @@ Old style of {hourly,daily,weekly,monthly}.jobs without anacron. No features.
 %patch18 -p1 -b .sigterm
 %patch19 -p1 -b .shutdown-msg
 %patch20 -p1 -b .getpwnam
+%patch21 -p1 -b .temp-name
 
 %build
 %configure \
@@ -235,6 +237,9 @@ cp -a /var/lock/subsys/crond /var/lock/subsys/cronie > /dev/null 2>&1 ||:
 %attr(0644,root,root) %{_sysconfdir}/cron.d/dailyjobs
 
 %changelog
+* Tue Sep 22 2015 Tomáš Mráz <tmraz@redhat.com> - 1.4.4-15.1
+- crontab: use temporary filename properly ignored by crond
+
 * Mon Mar 23 2015 Tomáš Mráz <tmraz@redhat.com> - 1.4.4-15
 - fix regression in parsing environment variables in anacrontab (#1204175)
 
