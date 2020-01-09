@@ -1,0 +1,23 @@
+diff -up cronie-1.4.11/src/security.c.no-pam cronie-1.4.11/src/security.c
+--- cronie-1.4.11/src/security.c.no-pam	2017-03-07 15:17:14.610948157 +0100
++++ cronie-1.4.11/src/security.c	2017-09-15 09:36:26.709112459 +0200
+@@ -86,6 +86,7 @@ static int cron_open_pam_session(struct
+ 		if (pam_session_opened != 0) \
+ 			pam_close_session(pamh, PAM_SILENT); \
+ 		pam_end(pamh, retcode); \
++		pamh = NULL; \
+ 	} \
+ return(retcode); }
+ #endif
+@@ -221,7 +222,10 @@ void cron_close_pam(void) {
+ 		pam_setcred(pamh, PAM_DELETE_CRED | PAM_SILENT);
+ 		pam_close_session(pamh, PAM_SILENT);
+ 	}
+-	pam_end(pamh, PAM_SUCCESS);
++	if (pamh != NULL) {
++		pam_end(pamh, PAM_SUCCESS);
++		pamh = NULL;
++	}
+ #endif
+ }
+ 

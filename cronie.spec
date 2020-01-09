@@ -6,11 +6,12 @@
 Summary:   Cron daemon for executing programs at set times
 Name:      cronie
 Version:   1.4.11
-Release:   17%{?dist}
+Release:   19%{?dist}
 License:   MIT and BSD and ISC and GPLv2+
 Group:     System Environment/Base
-URL:       https://fedorahosted.org/cronie
-Source0:   https://fedorahosted.org/releases/c/r/cronie/%{name}-%{version}.tar.gz
+URL:       https://github.com/cronie-crond/cronie
+Source0:   https://github.com/cronie-crond/cronie/releases/download/cronie-%{version}/cronie-%{version}.tar.gz
+
 Patch0:    cronie-systemd.patch
 Patch1:    cronie-1.4.11-fcntl_locking.patch
 Patch2:    cronie-1.4.11-pamenv.patch
@@ -24,6 +25,8 @@ Patch9:    cronie-1.4.11-anacron-mailto.patch
 Patch10:   cronie-1.4.11-crontab-root.patch
 Patch11:   cronie-1.4.11-man-file.patch
 Patch12:   cronie-1.4.11-selinux-user.patch
+Patch13:   cronie-1.4.11-no-pam.patch
+Patch14:   cronie-1.4.11-empty-var.patch
 
 Requires:  dailyjobs
 
@@ -101,6 +104,8 @@ extra features.
 %patch10 -p1 -b .root
 %patch11 -p1 -b .man-file
 %patch12 -p1 -b .selinux-user
+%patch13 -p1 -b .no-pam
+%patch14 -p1 -b .empty-var
 
 %build
 %configure \
@@ -225,7 +230,14 @@ exit 0
 %attr(0644,root,root) %config(noreplace) %{_sysconfdir}/cron.d/dailyjobs
 
 %changelog
-* Wed Mar 29 2017 Tomáš Mráz <tmraz@redhat.com> - 1.4.11-18
+* Mon Oct 16 2017 Tomáš Mráz <tmraz@redhat.com> - 1.4.11-19
+- fix URL and source URL of the package (#1501726)
+
+* Fri Sep 15 2017 Tomáš Mráz <tmraz@redhat.com> - 1.4.11-18
+- fix regression - spurious PAM log message from crontab (#1479064)
+- allow empty variables in crontabs (#1439217)
+
+* Wed Mar 29 2017 Tomáš Mráz <tmraz@redhat.com> - 1.4.11-17
 - make anacron not to contradict itself in syslog
   (job output does not have to be necessarily mailed)
 

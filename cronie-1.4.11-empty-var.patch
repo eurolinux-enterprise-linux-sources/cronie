@@ -1,0 +1,12 @@
+diff -up cronie-1.4.11/src/env.c.empty-var cronie-1.4.11/src/env.c
+--- cronie-1.4.11/src/env.c.empty-var	2017-03-07 15:17:14.604948015 +0100
++++ cronie-1.4.11/src/env.c	2017-09-15 15:38:24.275112187 +0200
+@@ -255,7 +255,7 @@ int load_env(char *envstr, FILE * f) {
+ 			abort();
+ 		}
+ 	}
+-	if (state != FINI && !(state == VALUE && !quotechar)) {
++	if (state != FINI && state != EQ2 && !(state == VALUE && !quotechar)) {
+ 		Debug(DPARS, ("load_env, not an env var, state = %d\n", state));
+ 			fseek(f, filepos, 0);
+ 		Set_LineNum(fileline);
