@@ -6,7 +6,7 @@
 Summary: Cron daemon for executing programs at set times
 Name: cronie
 Version: 1.4.4
-Release: 15%{?dist}.1
+Release: 16%{?dist}.2
 License: MIT and BSD and ISC and GPLv2
 Group: System Environment/Base
 URL: https://fedorahosted.org/cronie
@@ -33,6 +33,8 @@ Patch18:  cronie-1.4.4-sigterm-child.patch
 Patch19:  cronie-1.4.4-shutdown-msg.patch
 Patch20:  cronie-1.4.4-getpwnam-error.patch
 Patch21:  cronie-1.4.4-temp-name.patch
+Patch22:  cronie-1.4.4-refresh-users.patch
+Patch23:  cronie-1.4.4-syslog-output.patch
 
 Requires: syslog, bash >= 2.0
 Requires: /usr/sbin/sendmail
@@ -113,6 +115,8 @@ Old style of {hourly,daily,weekly,monthly}.jobs without anacron. No features.
 %patch19 -p1 -b .shutdown-msg
 %patch20 -p1 -b .getpwnam
 %patch21 -p1 -b .temp-name
+%patch22 -p1 -b .refresh-users
+%patch23 -p1 -b .syslog-output
 
 %build
 %configure \
@@ -237,7 +241,13 @@ cp -a /var/lock/subsys/crond /var/lock/subsys/cronie > /dev/null 2>&1 ||:
 %attr(0644,root,root) %{_sysconfdir}/cron.d/dailyjobs
 
 %changelog
-* Tue Sep 22 2015 Tomáš Mráz <tmraz@redhat.com> - 1.4.4-15.1
+* Fri Jul 22 2016 Tomáš Mráz <tmraz@redhat.com> - 1.4.4-16.2
+- fix support for syslogging of job output (#1237093)
+
+* Fri May 13 2016 Tomáš Mráz <tmraz@redhat.com> - 1.4.4-16.1
+- handle all getpwnam() failures as temporary
+
+* Mon Sep 21 2015 Tomáš Mráz <tmraz@redhat.com> - 1.4.4-16
 - crontab: use temporary filename properly ignored by crond
 
 * Mon Mar 23 2015 Tomáš Mráz <tmraz@redhat.com> - 1.4.4-15
