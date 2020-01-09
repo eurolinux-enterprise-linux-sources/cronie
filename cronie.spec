@@ -6,7 +6,7 @@
 Summary: Cron daemon for executing programs at set times
 Name: cronie
 Version: 1.4.4
-Release: 14%{?dist}
+Release: 15%{?dist}
 License: MIT and BSD and ISC and GPLv2
 Group: System Environment/Base
 URL: https://fedorahosted.org/cronie
@@ -235,6 +235,9 @@ cp -a /var/lock/subsys/crond /var/lock/subsys/cronie > /dev/null 2>&1 ||:
 %attr(0644,root,root) %{_sysconfdir}/cron.d/dailyjobs
 
 %changelog
+* Mon Mar 23 2015 Tomáš Mráz <tmraz@redhat.com> - 1.4.4-15
+- fix regression in parsing environment variables in anacrontab (#1204175)
+
 * Thu Feb  5 2015 Tomáš Mráz <tmraz@redhat.com> - 1.4.4-14
 - fix segfault on null dereference in anacron (#1031383)
 - do not remove daemon pid file in the child process
