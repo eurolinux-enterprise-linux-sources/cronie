@@ -6,7 +6,7 @@
 Summary: Cron daemon for executing programs at set times
 Name: cronie
 Version: 1.4.4
-Release: 12%{?dist}
+Release: 14%{?dist}
 License: MIT and BSD and ISC and GPLv2
 Group: System Environment/Base
 URL: https://fedorahosted.org/cronie
@@ -28,6 +28,10 @@ Patch13:  cronie-1.4.4-lang.patch
 Patch14:  cronie-1.4.4-random.patch
 Patch15:  cronie-1.4.4-mail.patch
 Patch16:  cronie-1.4.4-two_instances_run.patch
+Patch17:  cronie-1.4.4-null-deref.patch
+Patch18:  cronie-1.4.4-sigterm-child.patch
+Patch19:  cronie-1.4.4-shutdown-msg.patch
+Patch20:  cronie-1.4.4-getpwnam-error.patch
 
 Requires: syslog, bash >= 2.0
 Requires: /usr/sbin/sendmail
@@ -103,6 +107,10 @@ Old style of {hourly,daily,weekly,monthly}.jobs without anacron. No features.
 %patch14 -p1 -b .random
 %patch15 -p1 -b .mail
 %patch16 -p1 -b .2run
+%patch17 -p1 -b .null-deref
+%patch18 -p1 -b .sigterm
+%patch19 -p1 -b .shutdown-msg
+%patch20 -p1 -b .getpwnam
 
 %build
 %configure \
@@ -216,9 +224,9 @@ cp -a /var/lock/subsys/crond /var/lock/subsys/cronie > /dev/null 2>&1 ||:
 %attr(0755,root,root) %{_sysconfdir}/cron.hourly/0anacron
 %attr(0600,root,root) %config(noreplace) %{_sysconfdir}/anacrontab
 %dir /var/spool/anacron
-%ghost %verify(not md5 size mtime) /var/spool/anacron/cron.daily
-%ghost %verify(not md5 size mtime) /var/spool/anacron/cron.weekly
-%ghost %verify(not md5 size mtime) /var/spool/anacron/cron.monthly
+%attr(0600,root,root) %ghost %verify(not md5 size mtime) /var/spool/anacron/cron.daily
+%attr(0600,root,root) %ghost %verify(not md5 size mtime) /var/spool/anacron/cron.weekly
+%attr(0600,root,root) %ghost %verify(not md5 size mtime) /var/spool/anacron/cron.monthly
 %{_mandir}/man5/anacrontab.*
 %{_mandir}/man8/anacron.*
 
@@ -227,6 +235,12 @@ cp -a /var/lock/subsys/crond /var/lock/subsys/cronie > /dev/null 2>&1 ||:
 %attr(0644,root,root) %{_sysconfdir}/cron.d/dailyjobs
 
 %changelog
+* Thu Feb  5 2015 Tomáš Mráz <tmraz@redhat.com> - 1.4.4-14
+- fix segfault on null dereference in anacron (#1031383)
+- do not remove daemon pid file in the child process
+- add log message about crond shutdown (#1108384)
+- add log message when getpwnam fails
+
 * Thu Sep 12 2013 Marcela Mašláňová <mmaslano@redhat.com> - 1.4.4-12
 - nonroot gives different error messages than before 1006869
 - Related: rhbz#706979
