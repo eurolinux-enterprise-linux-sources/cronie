@@ -6,7 +6,7 @@
 Summary:   Cron daemon for executing programs at set times
 Name:      cronie
 Version:   1.4.11
-Release:   14%{?dist}.1
+Release:   17%{?dist}
 License:   MIT and BSD and ISC and GPLv2+
 Group:     System Environment/Base
 URL:       https://fedorahosted.org/cronie
@@ -20,6 +20,10 @@ Patch5:    cronie-unitfile.patch
 Patch6:    cronie-1.4.11-refresh-users.patch
 Patch7:    cronie-1.4.11-shutdown-msg.patch
 Patch8:    cronie-1.4.11-temp-name.patch
+Patch9:    cronie-1.4.11-anacron-mailto.patch
+Patch10:   cronie-1.4.11-crontab-root.patch
+Patch11:   cronie-1.4.11-man-file.patch
+Patch12:   cronie-1.4.11-selinux-user.patch
 
 Requires:  dailyjobs
 
@@ -93,6 +97,10 @@ extra features.
 %patch6 -p1 -b .refresh-users
 %patch7 -p1 -b .shutdown-msg
 %patch8 -p1 -b .temp-name
+%patch9 -p1 -b .mailto
+%patch10 -p1 -b .root
+%patch11 -p1 -b .man-file
+%patch12 -p1 -b .selinux-user
 
 %build
 %configure \
@@ -217,7 +225,18 @@ exit 0
 %attr(0644,root,root) %config(noreplace) %{_sysconfdir}/cron.d/dailyjobs
 
 %changelog
-* Tue Jan 23 2016 Tomáš Mráz <tmraz@redhat.com> - 1.4.11-14.1
+* Wed Mar 29 2017 Tomáš Mráz <tmraz@redhat.com> - 1.4.11-18
+- make anacron not to contradict itself in syslog
+  (job output does not have to be necessarily mailed)
+
+* Tue Mar  7 2017 Tomáš Mráz <tmraz@redhat.com> - 1.4.11-16
+- disable mail from anacron with empty MAILTO
+- crontab: do not block access with PAM when running as root
+- improve the crontab man page
+- do not hardcode system_u selinux user but use the user from
+  the current context
+
+* Tue Feb 23 2016 Tomáš Mráz <tmraz@redhat.com> - 1.4.11-15
 - crontab: use temporary filename properly ignored by crond
 
 * Tue Apr 21 2015 Tomáš Mráz <tmraz@redhat.com> - 1.4.11-14

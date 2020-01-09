@@ -1,0 +1,12 @@
+diff -up cronie-1.4.11/src/crontab.c.root cronie-1.4.11/src/crontab.c
+--- cronie-1.4.11/src/crontab.c.root	2017-03-07 13:52:23.000000000 +0100
++++ cronie-1.4.11/src/crontab.c	2017-03-07 13:53:40.491278915 +0100
+@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
+ 	}
+ 
+ #if defined(WITH_PAM)
+-	if (cron_start_pam(pw) != PAM_SUCCESS) {
++	if (getuid() != 0 && cron_start_pam(pw) != PAM_SUCCESS) {
+ 		fprintf(stderr,
+ 			"You (%s) are not allowed to access to (%s) because of pam configuration.\n",
+ 			User, ProgramName);

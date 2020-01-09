@@ -1,0 +1,15 @@
+diff -up cronie-1.4.11/man/crontab.1.man-file cronie-1.4.11/man/crontab.1
+--- cronie-1.4.11/man/crontab.1.man-file	2013-07-18 14:27:08.000000000 +0200
++++ cronie-1.4.11/man/crontab.1	2017-03-07 13:56:19.650013901 +0100
+@@ -44,8 +44,9 @@ crontab \- maintains crontab files for i
+ .BR -c
+ .SH DESCRIPTION
+ .I Crontab
+-is the program used to install, remove or list the tables used to serve
+-the
++is the program used to install a crontab table
++.IR file ,
++remove or list the existing tables used to serve the
+ .BR cron (8)
+ daemon.  Each user can have their own crontab, and though these are files
+ in
