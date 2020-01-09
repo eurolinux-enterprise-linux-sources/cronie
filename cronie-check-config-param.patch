@@ -1,0 +1,30 @@
+diff -up cronie-1.4.11/anacron/readtab.c.bla cronie-1.4.11/anacron/readtab.c
+--- cronie-1.4.11/anacron/readtab.c.bla	2013-07-18 14:27:08.000000000 +0200
++++ cronie-1.4.11/anacron/readtab.c	2014-01-27 17:47:41.362138084 +0100
+@@ -271,7 +271,8 @@ parse_tab_line(char *line)
+         if (strncmp(env_var, "START_HOURS_RANGE", 17) == 0)
+         {
+             r = match_rx("^([[:digit:]]+)-([[:digit:]]+)$", value, 2, &from, &to);
+-            if ((r == -1) || (from == NULL) || (to == NULL)) goto reg_invalid;
++            if (r == -1) goto reg_err;
++            if (r == 0) goto reg_invalid;
+             range_start = atoi(from);
+             range_stop = atoi(to);
+             if (range_stop < range_start) {
+@@ -282,6 +283,8 @@ parse_tab_line(char *line)
+         }
+         if (strncmp(env_var, "RANDOM_DELAY", 12) == 0) {
+             r = match_rx("^([[:digit:]]+)$", value, 0);
++            if (r == -1) goto reg_err;
++            if (r == 0) goto reg_invalid;
+             if (r != -1) {
+                 int i = random();
+                 double x = 0;
+@@ -289,7 +292,6 @@ parse_tab_line(char *line)
+                 random_number = (int)x;
+                 Debug(("Randomized delay set: %d", random_number));
+             }
+-        else goto reg_invalid;
+         }
+         if (strncmp(env_var, "PREFERRED_HOUR", 14) == 0) {
+             r = match_rx("^([[:digit:]]+)$", value, 1, &pref_hour);

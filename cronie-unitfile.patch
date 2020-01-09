@@ -1,0 +1,16 @@
+diff -up cronie-1.4.11/contrib/cronie.systemd.old cronie-1.4.11/contrib/cronie.systemd
+--- cronie-1.4.11/contrib/cronie.systemd.old	2014-01-27 14:31:47.696467385 +0100
++++ cronie-1.4.11/contrib/cronie.systemd	2014-07-04 15:18:16.000000000 +0200
+@@ -1,10 +1,11 @@
+ [Unit]
+ Description=Command Scheduler
+-After=syslog.target auditd.service systemd-user-sessions.service time-sync.target
++After=auditd.service systemd-user-sessions.service time-sync.target
+ 
+ [Service]
+ EnvironmentFile=/etc/sysconfig/crond
+ ExecStart=/usr/sbin/crond -n $CRONDARGS
++ExecReload=/bin/kill -HUP $MAINPID
+ KillMode=process
+ 
+ [Install]

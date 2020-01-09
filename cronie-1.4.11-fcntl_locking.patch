@@ -1,0 +1,38 @@
+diff -up cronie-1.4.11/src/misc.c.ddd cronie-1.4.11/src/misc.c
+--- cronie-1.4.11/src/misc.c.ddd	2013-07-18 14:27:08.000000000 +0200
++++ cronie-1.4.11/src/misc.c	2013-08-30 13:51:22.227040980 +0200
+@@ -75,7 +75,9 @@ static int LogFD = ERR;
+ static int syslog_open = FALSE;
+ #endif
+ 
+-#if defined(HAVE_FCNTL) && defined(F_SETLK)
++#if defined(HAVE_FLOCK)
++# define trylock_file(fd)      flock((fd), LOCK_EX|LOCK_NB)
++#elif defined(HAVE_FCNTL) && defined(F_SETLK)
+ static int trylock_file(int fd) {
+ 	struct flock fl;
+ 
+@@ -89,8 +91,6 @@ static int trylock_file(int fd) {
+ }
+ #elif defined(HAVE_LOCKF)
+ # define trylock_file(fd)      lockf((fd), F_TLOCK, 0)
+-#elif defined(HAVE_FLOCK)
+-# define trylock_file(fd)      flock((fd), LOCK_EX|LOCK_NB)
+ #endif
+ 
+ /*
+@@ -346,6 +346,14 @@ void acquire_daemonlock(int closeflag) {
+ 		(void) fcntl(fd, F_SETFD, 1);
+ 	}
+ 
++#if !defined(HAVE_FLOCK)
++	else {
++		/* Racy but better than nothing, just hope the parent exits */
++		sleep(0);
++		trylock_file(fd);
++	}
++#endif
++
+ 	sprintf(buf, "%ld\n", (long) pid);
+ 	(void) lseek(fd, (off_t) 0, SEEK_SET);
+ 	len = strlen(buf);

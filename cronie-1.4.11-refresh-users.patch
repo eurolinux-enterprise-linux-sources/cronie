@@ -1,0 +1,243 @@
+diff -up cronie-1.4.11/src/cron.c.refresh-users cronie-1.4.11/src/cron.c
+--- cronie-1.4.11/src/cron.c.refresh-users	2013-07-18 14:27:08.000000000 +0200
++++ cronie-1.4.11/src/cron.c	2015-04-21 14:43:11.205438697 +0200
+@@ -525,7 +525,6 @@ static void find_jobs(int vtime, cron_db
+ 	int minute, hour, dom, month, dow;
+ 	user *u;
+ 	entry *e;
+-	const char *uname;
+ 
+ 	/* The support for the job-specific timezones is not perfect. There will
+ 	 * be jobs missed or run twice during the DST change in the job timezone.
+@@ -562,16 +561,11 @@ static void find_jobs(int vtime, cron_db
+ 		 */
+ 		for (u = db->head; u != NULL; u = u->next) {
+ 		for (e = u->crontab; e != NULL; e = e->next) {
+-			Debug(DSCH | DEXT, ("user [%s:%ld:%ld:...] cmd=\"%s\"\n",
+-					e->pwd->pw_name, (long) e->pwd->pw_uid,
+-					(long) e->pwd->pw_gid, e->cmd));
+-				uname = e->pwd->pw_name;
+-			/* check if user exists in time of job is being run f.e. ldap */
+-			if (getpwnam(uname) != NULL) {
+ 				time_t virtualSecond = (vtime - e->delay) * SECONDS_PER_MINUTE;
+ 				time_t virtualGMTSecond = virtualSecond - vGMToff;
+ 				job_tz = env_get("CRON_TZ", e->envp);
+ 				maketime(job_tz, orig_tz);
++
+ 				/* here we test whether time is NOW */
+ 				if (bit_test(e->minute, minute) &&
+ 					bit_test(e->hour, hour) &&
+@@ -591,10 +585,9 @@ static void find_jobs(int vtime, cron_db
+ 							!(e->flags & (MIN_STAR | HR_STAR))) ||
+ 						(doWild && (e->flags & (MIN_STAR | HR_STAR))))
+ 						job_add(e, u);	/*will add job, if it isn't in queue already for NOW. */
+-				}
+-			}
+-		}
+-	}
++			        }
++		        }
++	        }
+ 	if (orig_tz != NULL)
+ 		setenv("TZ", orig_tz, 1);
+ 	else
+diff -up cronie-1.4.11/src/database.c.refresh-users cronie-1.4.11/src/database.c
+--- cronie-1.4.11/src/database.c.refresh-users	2013-07-18 14:27:08.000000000 +0200
++++ cronie-1.4.11/src/database.c	2015-04-21 15:20:03.768846359 +0200
+@@ -152,10 +152,41 @@ check_orphans(cron_db *db) {
+ 	}
+ }
+ 
++static int
++find_orphan(const char *uname, const char *fname, const char *tabname) {
++	orphan *o;
++
++	for (o = orphans; o != NULL; o = o->next) {
++		if (uname && o->uname) {
++			if (strcmp(uname, o->uname) != 0)
++				continue;
++		} else if (uname != o->uname)
++			continue;
++
++		if (fname && o->fname) {
++			if (strcmp(fname, o->fname) != 0)
++				continue;
++		} else if (fname != o->fname)
++			continue;
++
++		if (tabname && o->tabname) {
++			if (strcmp(tabname, o->tabname) != 0)
++				continue;
++		} else if (tabname != o->tabname)
++			continue;
++		return 1;
++	}
++
++	return 0;
++}
++
+ static void
+ add_orphan(const char *uname, const char *fname, const char *tabname) {
+ 	orphan *o;
+ 
++	if (find_orphan(uname, fname, tabname))
++		return;
++
+ 	o = calloc(1, sizeof(*o));
+ 	if (o == NULL)
+ 		return;
+diff -up cronie-1.4.11/src/entry.c.refresh-users cronie-1.4.11/src/entry.c
+--- cronie-1.4.11/src/entry.c.refresh-users	2013-07-18 14:27:08.000000000 +0200
++++ cronie-1.4.11/src/entry.c	2015-04-21 14:40:13.473310662 +0200
+@@ -99,6 +99,7 @@ entry *load_entry(FILE * file, void (*er
+ 	char envstr[MAX_ENVSTR];
+ 	char **tenvp;
+ 	char *p;
++	struct passwd temppw;
+ 
+ 	Debug(DPARS, ("load_entry()...about to eat comments\n"));
+ 
+@@ -286,11 +287,15 @@ entry *load_entry(FILE * file, void (*er
+ 
+ 		pw = getpwnam(username);
+ 		if (pw == NULL) {
+-			ecode = e_username;
+-			goto eof;
+-		}
+-		Debug(DPARS, ("load_entry()...uid %ld, gid %ld\n",
++			Debug(DPARS, ("load_entry()...unknown user entry\n"));
++			memset(&temppw, 0, sizeof (temppw));
++			temppw.pw_name = username;
++			temppw.pw_passwd = "";
++			pw = &temppw;
++		} else {
++			Debug(DPARS, ("load_entry()...uid %ld, gid %ld\n",
+ 				(long) pw->pw_uid, (long) pw->pw_gid));
++		}
+ 	}
+ 
+ 	if ((e->pwd = pw_dup(pw)) == NULL) {
+@@ -331,17 +336,11 @@ entry *load_entry(FILE * file, void (*er
+ 		else
+ 			log_it("CRON", getpid(), "ERROR", "can't set SHELL", 0);
+ 	}
+-	if (!env_get("HOME", e->envp)) {
+-		if (glue_strings(envstr, sizeof envstr, "HOME", pw->pw_dir, '=')) {
+-			if ((tenvp = env_set(e->envp, envstr)) == NULL) {
+-				ecode = e_memory;
+-				goto eof;
+-			}
+-			e->envp = tenvp;
+-		}
+-		else
+-			log_it("CRON", getpid(), "ERROR", "can't set HOME", 0);
++	if ((tenvp = env_update_home(e->envp, pw->pw_dir)) == NULL) {
++		ecode = e_memory;
++		goto eof;
+ 	}
++	e->envp = tenvp;
+ #ifndef LOGIN_CAP
+ 	/* If login.conf is in used we will get the default PATH later. */
+ 	if (ChangePath && !env_get("PATH", e->envp)) {
+diff -up cronie-1.4.11/src/env.c.refresh-users cronie-1.4.11/src/env.c
+--- cronie-1.4.11/src/env.c.refresh-users	2013-07-18 14:27:08.000000000 +0200
++++ cronie-1.4.11/src/env.c	2015-04-21 14:40:13.473310662 +0200
+@@ -25,6 +25,7 @@
+ #include <errno.h>
+ #include <stdlib.h>
+ #include <string.h>
++#include <sys/types.h>
+ #include <unistd.h>
+ 
+ #include "globals.h"
+@@ -291,3 +292,19 @@ char *env_get(const char *name, char **e
+ 	}
+ 	return (NULL);
+ }
++
++char **env_update_home(char **envp, const char *dir) {
++	char envstr[MAX_ENVSTR];
++
++	if (dir == NULL || *dir == '\0' || env_get("HOME", envp)) {
++		return envp;
++	}
++
++	if (glue_strings(envstr, sizeof envstr, "HOME", dir, '=')) {
++		envp = env_set(envp, envstr);
++	}			
++	else
++		log_it("CRON", getpid(), "ERROR", "can't set HOME", 0);
++
++	return envp;
++}
+diff -up cronie-1.4.11/src/funcs.h.refresh-users cronie-1.4.11/src/funcs.h
+--- cronie-1.4.11/src/funcs.h.refresh-users	2013-07-18 14:27:08.000000000 +0200
++++ cronie-1.4.11/src/funcs.h	2015-04-21 14:40:13.473310662 +0200
+@@ -82,7 +82,8 @@ char		*env_get(const char *, char **),
+ 		*first_word(const char *, const char *),
+ 		**env_init(void),
+ 		**env_copy(char **),
+-		**env_set(char **, const char *);
++		**env_set(char **, const char *),
++		**env_update_home(char **, const char *);
+ 
+ user		*load_user(int, struct passwd *, const char *, const char *, const char *),
+ 		*find_user(cron_db *, const char *, const char *);
+diff -up cronie-1.4.11/src/job.c.refresh-users cronie-1.4.11/src/job.c
+--- cronie-1.4.11/src/job.c.refresh-users	2013-07-18 14:27:08.000000000 +0200
++++ cronie-1.4.11/src/job.c	2015-04-21 14:40:13.474310685 +0200
+@@ -22,6 +22,11 @@
+ #include "config.h"
+ 
+ #include <stdlib.h>
++#include <pwd.h>
++#include <errno.h>
++#include <sys/types.h>
++#include <unistd.h>
++#include <string.h>
+ 
+ #include "funcs.h"
+ #include "globals.h"
+@@ -36,12 +41,42 @@ static job *jhead = NULL, *jtail = NULL;
+ 
+ void job_add(entry * e, user * u) {
+ 	job *j;
++	struct passwd *newpwd;
++	struct passwd *temppwd;
++	const char *uname;
+ 
+ 	/* if already on queue, keep going */
+ 	for (j = jhead; j != NULL; j = j->next)
+ 		if (j->e == e && j->u == u)
+ 			return;
+ 
++	uname = e->pwd->pw_name;
++	/* check if user exists in time of job is being run f.e. ldap */
++	if ((temppwd = getpwnam(uname)) != NULL) {
++		char **tenvp;
++
++		Debug(DSCH | DEXT, ("user [%s:%ld:%ld:...] cmd=\"%s\"\n",
++				e->pwd->pw_name, (long) temppwd->pw_uid,
++				(long) temppwd->pw_gid, e->cmd));
++		if ((newpwd = pw_dup(temppwd)) == NULL) {
++			log_it(uname, getpid(), "ERROR", "memory allocation failed", errno);
++			return;
++		}
++		free(e->pwd);
++		e->pwd = newpwd;
++
++		if ((tenvp = env_update_home(e->envp, e->pwd->pw_dir)) == NULL) {
++			log_it(uname, getpid(), "ERROR", "memory allocation failed", errno);
++			return;
++		}
++		e->envp = tenvp;
++	} else {
++		log_it(uname, getpid(), "ERROR", "getpwnam() failed",errno);
++		Debug(DSCH | DEXT, ("%s:%d pid=%d time=%ld getpwnam(%s) failed errno=%d error=%s\n",
++			__FILE__,__LINE__,getpid(),time(NULL),uname,errno,strerror(errno)));
++		return;
++	}
++
+ 	/* build a job queue element */
+ 	if ((j = (job *) malloc(sizeof (job))) == NULL)
+ 		return;
