@@ -6,7 +6,7 @@
 Summary:   Cron daemon for executing programs at set times
 Name:      cronie
 Version:   1.4.11
-Release:   19%{?dist}
+Release:   20%{?dist}
 License:   MIT and BSD and ISC and GPLv2+
 Group:     System Environment/Base
 URL:       https://github.com/cronie-crond/cronie
@@ -27,6 +27,7 @@ Patch11:   cronie-1.4.11-man-file.patch
 Patch12:   cronie-1.4.11-selinux-user.patch
 Patch13:   cronie-1.4.11-no-pam.patch
 Patch14:   cronie-1.4.11-empty-var.patch
+Patch15:   cronie-1.4.11-race-on-crontab-modification.patch
 
 Requires:  dailyjobs
 
@@ -106,6 +107,7 @@ extra features.
 %patch12 -p1 -b .selinux-user
 %patch13 -p1 -b .no-pam
 %patch14 -p1 -b .empty-var
+%patch15 -p1 -b .race-cond
 
 %build
 %configure \
@@ -230,6 +232,11 @@ exit 0
 %attr(0644,root,root) %config(noreplace) %{_sysconfdir}/cron.d/dailyjobs
 
 %changelog
+* Tue Oct 23 2018 Marcel Plch <mplch@redhat.com> - 1.4.11-20
+- Fix race condition when crontab is modified the same second
+  before and after reading the crontab
+- Resolves: rhbz#1638691
+
 * Mon Oct 16 2017 Tomáš Mráz <tmraz@redhat.com> - 1.4.11-19
 - fix URL and source URL of the package (#1501726)
 
