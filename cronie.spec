@@ -6,7 +6,7 @@
 Summary:   Cron daemon for executing programs at set times
 Name:      cronie
 Version:   1.4.11
-Release:   20%{?dist}
+Release:   23%{?dist}
 License:   MIT and BSD and ISC and GPLv2+
 Group:     System Environment/Base
 URL:       https://github.com/cronie-crond/cronie
@@ -28,6 +28,9 @@ Patch12:   cronie-1.4.11-selinux-user.patch
 Patch13:   cronie-1.4.11-no-pam.patch
 Patch14:   cronie-1.4.11-empty-var.patch
 Patch15:   cronie-1.4.11-race-on-crontab-modification.patch
+Patch16:   cronie-1.4.11-inherit-path.patch
+Patch17:   cronie-1.4.11-smartcard-auth.patch
+Patch18:   cronie-1.4.11-restart-on-failure.patch
 
 Requires:  dailyjobs
 
@@ -108,6 +111,9 @@ extra features.
 %patch13 -p1 -b .no-pam
 %patch14 -p1 -b .empty-var
 %patch15 -p1 -b .race-cond
+%patch16 -p1 -b .inherit-path
+%patch17 -p1 -b .smartcard-auth
+%patch18 -p1 -b .restart
 
 %build
 %configure \
@@ -232,6 +238,19 @@ exit 0
 %attr(0644,root,root) %config(noreplace) %{_sysconfdir}/cron.d/dailyjobs
 
 %changelog
+* Wed Feb 13 2019 Marcel Plch <mplch@redhat.com> - 1.4.11-23
+- Make cronie restart on failure
+- Resolves: rhbz#1651730
+
+* Tue Dec 04 2018 Marcel Plch <mplch@redhat.com> - 1.4.11-22
+- Backport upstream patch to fix cron failing on
+  smart card authentication
+- Resolves: rhbz#1650314
+
+* Thu Nov 29 2018 Marcel Plch <mplch@redhat.com> - 1.4.11-21
+- Backport upstream patch to fix -P behavior
+- Resolves: rhbz#1536111
+
 * Tue Oct 23 2018 Marcel Plch <mplch@redhat.com> - 1.4.11-20
 - Fix race condition when crontab is modified the same second
   before and after reading the crontab
